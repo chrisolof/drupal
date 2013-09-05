@@ -43,26 +43,26 @@ if compass
      gem install bundler
      EOH
   end
-end
 
-node[:drupal][:sites].each do |key, data|
-  site_name = key
-  site = data
+  node[:drupal][:sites].each do |key, data|
+    site_name = key
+    site = data
 
-  if (site[:compass][:compile]) and site[:compass][:watch_dir]
-    bash "bundle-install" do
-      cwd "/assets/#{site_name}/current/#{site[:compass][:watch_dir]}"
-      code <<-EOH
-        bundle install
-        EOH
-    end
-
-    if site[:compass][:compile]
-      bash "compass-compile" do
+    if (site[:compass][:compile]) and site[:compass][:watch_dir]
+      bash "bundle-install" do
         cwd "/assets/#{site_name}/current/#{site[:compass][:watch_dir]}"
         code <<-EOH
-          bundle exec compass compile /assets/#{site_name}/current/#{site[:compass][:watch_dir]}
+          bundle install
           EOH
+      end
+
+      if site[:compass][:compile]
+        bash "compass-compile" do
+          cwd "/assets/#{site_name}/current/#{site[:compass][:watch_dir]}"
+          code <<-EOH
+            bundle exec compass compile /assets/#{site_name}/current/#{site[:compass][:watch_dir]}
+            EOH
+        end
       end
     end
   end

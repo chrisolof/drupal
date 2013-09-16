@@ -18,6 +18,15 @@
 # limitations under the License.
 #
 
+# Create the /assets directory if it doesn't already exist
+# This directory won't exist if we using SSHFS (and not using synced folders)
+directory "/assets" do
+  owner node[:drupal][:server][:web_user]
+  group node[:drupal][:server][:web_group]
+  mode 00755
+  action :create
+end
+
 directory node[:drupal][:server][:base] do
   owner node[:drupal][:server][:web_user]
   group node[:drupal][:server][:web_group]
@@ -29,6 +38,19 @@ end
 node[:drupal][:sites].each do |key, data|
   site_name = key
   site = data
+
+  # Create the files perm/ownership shell script for this site
+  template "/root/#{site_name}-files.sh" do
+    source "files.sh.erb"
+    mode 0755
+    owner "root"
+    group "root"
+    variables({
+      :owner => node[:drupal][:server][:web_user],
+      :group => node[:drupal][:server][:web_group],
+      :files => "/assets/#{site_name}/files",
+    })
+  end
 
   directory "/assets/#{site_name}" do
     owner node[:drupal][:server][:web_user]
@@ -98,7 +120,6 @@ node[:drupal][:sites].each do |key, data|
       end
 
       before_restart do
-
         execute "drush-site-update" do
           cwd release_path
           command <<-EOF
@@ -130,7 +151,12 @@ node[:drupal][:sites].each do |key, data|
         else
           # Install existing database.
         end
-
+        # Run our files perm/ownership shell script
+        bash "change file ownership" do
+          code <<-EOH
+            /root/#{site_name}-files.sh
+          EOH
+        end
       end
 
       after_restart do

@@ -39,6 +39,19 @@ node[:drupal][:sites].each do |key, data|
   site_name = key
   site = data
 
+  # Create the releases perm/ownership shell script for this site
+  template "/root/#{site_name}-releases.sh" do
+    source "releases.sh.erb"
+    mode 0755
+    owner "root"
+    group "root"
+    variables({
+      :owner => "vagrant",
+      :group => "vagrant",
+      :releases => "/assets/#{site_name}/releases",
+    })
+  end
+
   # Create the files perm/ownership shell script for this site
   template "/root/#{site_name}-files.sh" do
     source "files.sh.erb"
@@ -150,6 +163,12 @@ node[:drupal][:sites].each do |key, data|
           end
         else
           # Install existing database.
+        end
+        # Run our releases perm/ownership shell script
+        bash "change releases file ownership" do
+          code <<-EOH
+            /root/#{site_name}-releases.sh
+          EOH
         end
         # Run our files perm/ownership shell script
         bash "change file ownership" do

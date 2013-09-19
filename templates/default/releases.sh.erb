@@ -1,5 +1,2 @@
 #! /bin/bash
 chown -R <%= @owner %>:<%= @group %> <%= @releases %>
-chmod 775 <%= @releases %>
-find <%= @releases %> -type d -exec chmod 775 {} \;
-find <%= @releases %> -type f -exec chmod 664 {} \;

@@ -52,7 +52,7 @@ if compass
       bash "bundle-install" do
         cwd "/assets/#{site_name}/current/#{site[:compass][:watch_dir]}"
         code <<-EOH
-          bundle install
+          sudo -H -u vagrant bundle install
           EOH
       end
 
@@ -60,7 +60,7 @@ if compass
         bash "compass-compile" do
           cwd "/assets/#{site_name}/current/#{site[:compass][:watch_dir]}"
           code <<-EOH
-            bundle exec compass compile /assets/#{site_name}/current/#{site[:compass][:watch_dir]}
+            sudo -H -u vagrant bundle exec compass compile /assets/#{site_name}/current/#{site[:compass][:watch_dir]}
             EOH
         end
       end

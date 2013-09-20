@@ -213,6 +213,11 @@ node[:drupal][:sites].each do |key, data|
               end
             end
           end
+          execute "chown-git-folder" do
+            cwd "#{node[:drupal][:server][:base]}/#{site_name}/current"
+            command "chown -R vagrant:vagrant .git"
+            only_if { ::File.exists?("#{node[:drupal][:server][:base]}/#{site_name}/current") }
+          end
         end
       end
 

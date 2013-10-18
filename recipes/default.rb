@@ -133,19 +133,25 @@ node[:drupal][:sites].each do |key, data|
       end
 
       before_restart do
-        execute "drush-site-update" do
-          cwd release_path
-          command <<-EOF
-            drush updb -y
-            drush cc all
-          EOF
-          Chef::Log.debug "drush-site-update: cwd #{release_path}; drush updb -y; drush cc all" if ::File.exists?(settings_file)
-          only_if { ::File.exists?(settings_file) }
+        if site[:database].nil? or site[:database][:import] == false
+          execute "drush-site-update" do
+            cwd release_path
+            command <<-EOF
+              drush updb -y
+              drush cc all
+            EOF
+            Chef::Log.debug "drush-site-update: cwd #{release_path}; drush updb -y; drush cc all" if ::File.exists?(settings_file)
+            only_if { ::File.exists?(settings_file) }
+          end
         end
 
-        if site[:database].nil?
+        drupal_user = data_bag_item('users', 'drupal')[node.chef_environment]
+
+        # Run a site install if we have no pre-existing db or if we're going to
+        # import a db file (in the latter we need a connected settings.php file,
+        # which is created by a site-install.
+        if site[:database].nil? or site[:database][:import]
           execute "drush-site-install" do
-            drupal_user = data_bag_item('users', 'drupal')[node.chef_environment]
             install = site[:install]
             cmd = "drush -y site-install #{site[:profile]}"
             install.each do |flag, value|
@@ -161,9 +167,18 @@ node[:drupal][:sites].each do |key, data|
             not_if { ::File.exists?(settings_file) }
             Chef::Log.debug "drush-site-install: cwd #{release_path}; #{cmd}" unless ::File.exists?(settings_file)
           end
-        else
-          # Install existing database.
         end
+        # Import existing database if flag is set.
+        if !site[:database].nil? and site[:database][:import]
+          bash "Install existing database" do
+            # Clear out the existing db, import from db file
+            code <<-EOH
+              echo "DROP DATABASE #{site_name}; CREATE DATABASE #{site_name};" | mysql -u#{drupal_user['dbuser']} -p#{drupal_user['dbpass']}
+              gunzip < #{site[:database][:file]} | mysql -u#{drupal_user['dbuser']} -p#{drupal_user['dbpass']} #{site_name}
+            EOH
+          end
+        end
+        
         # Run our releases perm/ownership shell script
         bash "change releases file ownership" do
           code <<-EOH

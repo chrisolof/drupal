@@ -61,9 +61,9 @@ node[:drupal][:sites].each do |key, data|
       action :grant
     end
   end
-
-  unless site[:database].nil?
 =begin
+  unless site[:database].nil?
+
 I should be able to use something like the following but it simply doesn't work
 in chef:
 
@@ -75,7 +75,6 @@ in chef:
 
 Instead, I have to go the dirty route and do the following in bash.  If you can
 help resolve this please do so that I don't feel dirty!
-=end
     bash "Import existing #{site_name} database." do
       user "root"
       code <<-EOH
@@ -87,4 +86,5 @@ help resolve this please do so that I don't feel dirty!
     end
 
   end
+=end
 end
